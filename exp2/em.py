@@ -29,7 +29,6 @@ class GaussianMixtureModel:
         self._alpha = np.array([1 / self._n for _ in range(self._n)])
         self._mean = np.array(
             [i / self._n * (x_train.max(axis=0) - x_train.min(axis=0)) + x_train.min(axis=0) for i in range(self._n)])
-        # self._mean = np.array([[1, 2], [2, 3]])
         self._var = np.array([np.ones(self._dim) for i in range(self._n)])
 
     def _em_iteration(self):
@@ -96,17 +95,35 @@ class GaussianMixtureModel:
 
 
 if __name__ == '__main__':
+    MESH_EPS = 0.05
     logging.basicConfig(level=logging.INFO)
     n_sample_1 = 50
     n_sample_2 = 30
-    centers = [[0.0, 0.0], [3.0, 4.0]]
-    clusters_std = [1, 0.2]
+    centers = [[0.0, 0.0], [1.5, 2.5]]
+    clusters_std = [1, 0.5]
     X, y = make_blobs(n_samples=[n_sample_1, n_sample_2], centers=centers, cluster_std=clusters_std, random_state=0,
                       shuffle=False)
     clf = GaussianMixtureModel(2)
-    clf.fit(X)
-    cls = clf.predict(X)
-    score = clf.score_samples(X)
-    print(score)
-    plt.scatter(X[:, 0], X[:, 1], c=cls, cmap=plt.cm.Paired, edgecolors='k')
-    plt.show()
+    clf.set_fit_data(X)
+    seq = 0
+    while True:
+        c = clf.fit_iteration()
+        xx, yy = np.meshgrid(np.arange(X.min(axis=0)[0] - 1, X.max(axis=0)[0] + 1, MESH_EPS),
+                             np.arange(X.min(axis=0)[1] - 1, X.max(axis=0)[1] + 1, MESH_EPS))
+        scores = clf.score_samples(np.vstack([xx.ravel(), yy.ravel()]).T)
+        scores = scores[1, :] - scores[0, :]
+        scores = scores.reshape(xx.shape)
+        plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Paired, edgecolors='k')
+        CS = plt.contour(xx, yy, scores, alpha=0.8)
+        plt.clabel(CS, CS.levels, inline=True, fontsize=10)
+        plt.savefig("./{}.png".format(seq))
+        plt.close()
+        # plt.show()
+        seq += 1
+        if not c:
+            break
+    # 生成可视化GIF
+    import os
+    os.system("rm *.gif")
+    os.system("ffmpeg -framerate 3 -i %d.png  em.gif")
+    os.system("rm *.png")
