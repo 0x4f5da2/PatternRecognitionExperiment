@@ -5,6 +5,9 @@ import numpy as np
 from sklearn.datasets import make_blobs
 
 
+# 使用numpy向量化计算，运算效率高，代码简洁易读
+# 将EM算法的过程可视化
+
 class GaussianMixtureModel:
     def __init__(self, n=1, eps=5e-4):
         self._n = n
@@ -57,8 +60,8 @@ class GaussianMixtureModel:
 
     def fit_iteration(self):  # 执行一次EM算法，返回是否继续迭代
         mu, sigma, alpha = self._em_iteration()
-        delta = np.sum((self._mean - mu) * (self._mean - mu)) + np.sum(
-            (self._var - sigma) * (self._var - sigma)) + np.sum((self._alpha - alpha) * (self._alpha - alpha))
+        delta = np.sum(np.power(self._mean - mu, 2)) + np.sum(np.power(self._var - sigma, 2)) + np.sum(
+            np.power(self._alpha - alpha, 2))
         self._mean = mu
         self._var = sigma
         self._alpha = alpha
@@ -97,10 +100,10 @@ class GaussianMixtureModel:
 if __name__ == '__main__':
     MESH_EPS = 0.05
     logging.basicConfig(level=logging.INFO)
-    n_sample_1 = 50
-    n_sample_2 = 30
-    centers = [[0.0, 0.0], [1.5, 2.5]]
-    clusters_std = [1, 0.5]
+    n_sample_1 = 90
+    n_sample_2 = 80
+    centers = [[0.0, 6.0], [6.0, 0]]
+    clusters_std = [2, 2]
     # 生成数据
     X, y = make_blobs(n_samples=[n_sample_1, n_sample_2], centers=centers, cluster_std=clusters_std, random_state=0,
                       shuffle=False)
@@ -112,8 +115,8 @@ if __name__ == '__main__':
     while True:
         c = clf.fit_iteration()
         # 绘制此次迭代后的结果
-        xx, yy = np.meshgrid(np.arange(X.min(axis=0)[0] - 1, X.max(axis=0)[0] + 1, MESH_EPS),
-                             np.arange(X.min(axis=0)[1] - 1, X.max(axis=0)[1] + 1, MESH_EPS))
+        xx, yy = np.meshgrid(np.arange(X.min(axis=0)[0] - 3, X.max(axis=0)[0] + 3, MESH_EPS),
+                             np.arange(X.min(axis=0)[1] - 3, X.max(axis=0)[1] + 3, MESH_EPS))
         scores = clf.score_samples(np.vstack([xx.ravel(), yy.ravel()]).T)
         scores = scores[1, :] - scores[0, :]
         scores = scores.reshape(xx.shape)
@@ -121,13 +124,13 @@ if __name__ == '__main__':
         CS = plt.contour(xx, yy, scores, alpha=0.8)
         plt.clabel(CS, CS.levels, inline=True, fontsize=10)
         plt.savefig("./{}.png".format(seq))
-        plt.close()
         # plt.show()
+        plt.close()
         seq += 1
         if not c:
             break
-    # 生成可视化GIF
-    import os
-    os.system("rm *.gif")
-    os.system("ffmpeg -framerate 3 -i %d.png  em.gif")
-    os.system("rm *.png")
+    # # 生成可视化GIF
+    # import os
+    # os.system("rm *.gif")
+    # os.system("ffmpeg -framerate 5 -i %d.png  em.gif")
+    # os.system("rm *.png")
