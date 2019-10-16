@@ -17,12 +17,12 @@ class GaussianMixtureModel:
         self._len_train = None
         self._eps = eps
 
-    def fit(self, x_train):
+    def fit(self, x_train):  # 执行EM直到收敛
         self.set_fit_data(x_train)
         while self.fit_iteration():
             pass
 
-    def set_fit_data(self, x_train: np.array):
+    def set_fit_data(self, x_train: np.array):  # 设置训练数据
         self._x_train = x_train
         self._len_train = x_train.shape[0]
         self._dim = x_train.shape[1]
@@ -31,7 +31,7 @@ class GaussianMixtureModel:
             [i / self._n * (x_train.max(axis=0) - x_train.min(axis=0)) + x_train.min(axis=0) for i in range(self._n)])
         self._var = np.array([np.ones(self._dim) for i in range(self._n)])
 
-    def _em_iteration(self):
+    def _em_iteration(self):  # 实现统计学习方法9.3节内容，EM算法主要部分，使用向量化计算
         self._fitted = True
         # Expectation
         results = []
@@ -55,7 +55,7 @@ class GaussianMixtureModel:
 
         return mu_hat, sigma2_hat, alpha_hat
 
-    def fit_iteration(self):
+    def fit_iteration(self):  # 执行一次EM算法，返回是否继续迭代
         mu, sigma, alpha = self._em_iteration()
         delta = np.sum((self._mean - mu) * (self._mean - mu)) + np.sum(
             (self._var - sigma) * (self._var - sigma)) + np.sum((self._alpha - alpha) * (self._alpha - alpha))
@@ -72,7 +72,7 @@ class GaussianMixtureModel:
         else:
             return True
 
-    def score_samples(self, X):
+    def score_samples(self, X):  # 获取每个高斯分布的概率密度
         if not self._fitted:
             raise RuntimeError
         score_list = []
@@ -89,7 +89,7 @@ class GaussianMixtureModel:
         score = np.vstack(score_list)
         return score
 
-    def predict(self, X):
+    def predict(self, X):  # 预测
         gi = self.score_samples(X)
         return np.argmax(gi, axis=0)
 
@@ -101,13 +101,17 @@ if __name__ == '__main__':
     n_sample_2 = 30
     centers = [[0.0, 0.0], [1.5, 2.5]]
     clusters_std = [1, 0.5]
+    # 生成数据
     X, y = make_blobs(n_samples=[n_sample_1, n_sample_2], centers=centers, cluster_std=clusters_std, random_state=0,
                       shuffle=False)
+    # 实例化所实现算法
     clf = GaussianMixtureModel(2)
     clf.set_fit_data(X)
     seq = 0
+    # 进行迭代
     while True:
         c = clf.fit_iteration()
+        # 绘制此次迭代后的结果
         xx, yy = np.meshgrid(np.arange(X.min(axis=0)[0] - 1, X.max(axis=0)[0] + 1, MESH_EPS),
                              np.arange(X.min(axis=0)[1] - 1, X.max(axis=0)[1] + 1, MESH_EPS))
         scores = clf.score_samples(np.vstack([xx.ravel(), yy.ravel()]).T)
