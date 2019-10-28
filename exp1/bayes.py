@@ -68,8 +68,8 @@ if __name__ == '__main__':
     boy_data = boy_data[:, :2]
     girl_data = np.array(girl_data)
     girl_data = girl_data[:, :2]
-    shuffle(boy_data)
-    shuffle(girl_data)
+    # shuffle(boy_data)
+    # shuffle(girl_data)
     # 计算决策边界相关
     data = np.vstack([boy_data, girl_data])
     xx, yy = np.meshgrid(np.arange(data.min(axis=0)[0] - 5, data.max(axis=0)[0] + 5, MESH_EPS),

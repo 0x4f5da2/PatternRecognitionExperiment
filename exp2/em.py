@@ -111,12 +111,12 @@ if __name__ == '__main__':
     clf = GaussianMixtureModel(2)
     clf.set_fit_data(X)
     seq = 0
+    xx, yy = np.meshgrid(np.arange(X.min(axis=0)[0] - 3, X.max(axis=0)[0] + 3, MESH_EPS),
+                         np.arange(X.min(axis=0)[1] - 3, X.max(axis=0)[1] + 3, MESH_EPS))
     # 进行迭代
     while True:
         c = clf.fit_iteration()
         # 绘制此次迭代后的结果
-        xx, yy = np.meshgrid(np.arange(X.min(axis=0)[0] - 3, X.max(axis=0)[0] + 3, MESH_EPS),
-                             np.arange(X.min(axis=0)[1] - 3, X.max(axis=0)[1] + 3, MESH_EPS))
         scores = clf.score_samples(np.vstack([xx.ravel(), yy.ravel()]).T)
         scores = scores[1, :] - scores[0, :]
         scores = scores.reshape(xx.shape)
@@ -124,13 +124,13 @@ if __name__ == '__main__':
         CS = plt.contour(xx, yy, scores, alpha=0.8)
         plt.clabel(CS, CS.levels, inline=True, fontsize=10)
         plt.savefig("./{}.png".format(seq))
-        # plt.show()
+        plt.show()
         plt.close()
         seq += 1
         if not c:
             break
-    # # 生成可视化GIF
-    # import os
-    # os.system("rm *.gif")
-    # os.system("ffmpeg -framerate 5 -i %d.png  em.gif")
-    # os.system("rm *.png")
+    # 生成可视化GIF
+    import os
+    os.system("rm *.gif")
+    os.system("ffmpeg -framerate 5 -i %d.png  em.gif")
+    os.system("rm *.png")
