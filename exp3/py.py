@@ -1,12 +1,12 @@
 import numpy as np
 import time
 from sklearn import datasets
+from sklearn.svm import SVC
 
 
 class LinearSVM:
     def __init__(self):
         self.W = None
-        self.cls = None
 
     def fit(self, X, y, learning_rate=1e-5, reg=1e-5, num_iter=None, batch_size=None, verbose=False):
         X = np.hstack([X, np.ones((X.shape[0], 1))])
@@ -15,7 +15,6 @@ class LinearSVM:
         if self.W is None:
             self.W = 0.001 * np.random.randn(dim, num_classes)
 
-        loss_history = []
         for it in range(num_iter):
             if batch_size is not None:
                 batch_idx = np.random.choice(num_train, batch_size, replace=True)
@@ -25,22 +24,19 @@ class LinearSVM:
                 X_batch = X
                 y_batch = y
 
-            loss, grad = self.loss(X_batch, y_batch, reg)
-            loss_history.append(loss)
+            loss, grad = self._loss(X_batch, y_batch, reg)
 
             self.W -= learning_rate * grad
 
-            if verbose and it % 5 == 0:
+            if verbose and it % 50 == 0:
                 print('iteration %d / %d: loss %f' % (it, num_iter, loss))
-
-        return loss_history
 
     def predict(self, X):
         X = np.hstack([X, np.ones((X.shape[0], 1))])
         scores = X @ self.W
         return np.argmax(scores, axis=1)
 
-    def loss(self, X_batch, y_batch, reg):
+    def _loss(self, X_batch, y_batch, reg):
         # forward
         loss = 0.0
         num_train = X_batch.shape[0]
@@ -52,6 +48,7 @@ class LinearSVM:
         loss += np.sum(margins[mask])
         loss /= num_train
         loss += reg * np.sum(self.W * self.W)
+
         # backward
         d_margin = np.zeros_like(margins)
         d_margin[mask] = 1
@@ -78,9 +75,11 @@ if __name__ == '__main__':
     y_train = target[:300]
     X_test = data[300:]
     y_test = target[300:]
+
     svm = LinearSVM()
     svm.fit(X_train, y_train, num_iter=500, verbose=True)
-    print("Accuracy on test set", np.mean(y_test == svm.predict(X_test)))
+    print("Accuracy on testing set:", np.mean(y_test == svm.predict(X_test)))
 
-
-
+    svc = SVC(gamma="auto", kernel="linear")
+    svc.fit(X_train, y_train)
+    print("Accuracy using sklearn on testing set:", np.mean(y_test == svc.predict(X_test)))
